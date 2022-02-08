@@ -1,10 +1,5 @@
 { config, pkgs, ... }:
 
-let
-  neovim-nightly-overlay = (import (builtins.fetchTarball {
-    url = https://github.com/nix-community/neovim-nightly-overlay/archive/master.tar.gz;
-  }));
-in
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -104,10 +99,6 @@ in
 
   services.avahi.enable = true;
 
-  nixpkgs.overlays = [
-    neovim-nightly-overlay
-  ];
-
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     acpi
@@ -134,7 +125,6 @@ in
     xdotool
     xorg.xmodmap
     zsh
-    neovim-nightly
   ];
 
   fonts.fonts = with pkgs; [
