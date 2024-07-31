@@ -1,93 +1,193 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 { config, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  imports = [ ./hardware-configuration.nix ];
 
-  boot.loader = {
-    systemd-boot.enable = true;
-    efi.canTouchEfiVariables = true;
+  system = {
+    stateVersion = "24.05";
+
+    autoUpgrade = {
+      enable = true;
+      channel = https://nixos.org/channels/nixos-24.05;
+    };
   };
 
-  services.xserver = {
-    enable = true;
-    libinput.enable = true;
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-    desktopManager = {
-      default = "xfce";
-      xterm.enable = false;
-      xfce = {
+  boot = {
+    kernelPackages = pkgs.linuxKernel.packages.linux_5_15;
+
+    loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+      grub.configurationLimit = 15;
+    };
+  };
+
+  services = {
+    xserver = {
+      enable = true;
+
+      # Xfce manages themes, default applications, mounting media, etc. When
+      # first configuring a new system you'll want to run `xfce4-settings-manager`
+      # to make stateful changes such as setting the window and icon styles.
+      desktopManager = {
+        xterm.enable = false;
+        xfce = {
+          enable = true;
+          noDesktop = true;
+          enableXfwm = false;
+        };
+      };
+
+      windowManager.i3.enable = true;
+
+      displayManager.lightdm = {
         enable = true;
-        noDesktop = true;
-        enableXfwm = false;
-        thunarPlugins = [pkgs.xfce.thunar-archive-plugin];
+
+        greeters.gtk = {
+          enable = true;
+          theme.name = "Adapta";
+          iconTheme.name = "Arc";
+          cursorTheme.name = "Default";
+          indicators = [ "~session" "~spacer" "~power" ];
+          extraConfig = ''
+            background = #2E84EC
+          '';
+        };
       };
     };
-    windowManager.i3.enable = true;
-  };
 
-  networking.wireless = {
-    enable = true;
-    networks = {
-      # Fake ssid so NixOS creates wpa_supplicant.conf
-      # otherwise the service fails and WiFi is not available.
-      # https://github.com/NixOS/nixpkgs/issues/23196
-      S4AKR00UNUN21W1NV2Y5MDDW8 = {};
+    displayManager.defaultSession = "xfce+i3";
+
+    libinput.enable = true;
+
+    connman.enable = true;
+
+    printing.enable = true;
+
+    avahi = {
+      enable = true;
+      nssmdns4 = true;
+      openFirewall = true;
+    };
+
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
     };
   };
-  networking.connman.enable = true;
+
+  networking = {
+    wireless = {
+      enable = true;
+      interfaces = [ "wlp0s20f3" ];
+    };
+
+    firewall = {
+      enable = true;
+      # Allow ports needed for chromecast. See
+      # https://github.com/NixOS/nixpkgs/issues/49630
+      # Also open TCP ports for local development
+      allowedUDPPortRanges = [ { from = 32768; to = 60999; } ];
+      allowedTCPPorts = [ 8010 3000 4000 5432 55555 4567 ];
+    };
+  };
+
+  programs = {
+    dconf.enable = true;
+
+    gnupg.agent = {
+       enable = true;
+       enableSSHSupport = true;
+    };
+
+    thunar = {
+      enable = true;
+      plugins = with pkgs.xfce; [
+        thunar-archive-plugin
+        thunar-media-tags-plugin
+        thunar-volman
+      ];
+    };
+
+    zsh.enable = true;
+  };
 
   nixpkgs.config.allowUnfree = true;
+
   environment.systemPackages = with pkgs; [
-    arandr
-    coreutils
-    connman-ncurses
-    firefox
-    git
-    htop
     (hunspellWithDicts [ hunspellDicts.en-us ])
-    killall
+    (polybar.override { i3Support = true; pulseSupport = true; })
+    acpi
+    adapta-gtk-theme
+    alsa-utils
+    arandr
+    arc-icon-theme
+    baobab
+    bat
+    brightnessctl
+    catdocx
+    cloc
+    connman-gtk
+    connman-ncurses
+    coreutils
+    direnv
+    diskus
+    emacs
+    fd
+    feh
+    ffmpeg
+    figlet
+    file
+    firefox
+    fzf
+    git
+    gnome.file-roller
+    gnupg
+    htop
+    hyperfine
+    jless
+    lighttpd
+    links2
+    mplayer
+    neovim
+    ntfs3g
+    pandoc
+    pavucontrol
+    ripgrep
     scrot
+    silver-searcher
     stow
+    tpacpi-bat
     tree
-    vim
+    universal-ctags
+    unzip
+    vim_configurable
+    vlc
     wget
     xarchiver
     xcape
     xclip
+    xdotool
     xorg.xmodmap
+    zoom-us
     zsh
   ];
 
-  fonts.fonts = with pkgs; [
-    inconsolata
-    font-awesome_5
-  ];
+  fonts.packages = with pkgs; [ inconsolata font-awesome_5 ];
 
   time.timeZone = "America/New_York";
 
-  sound.enable = true;
-  hardware.pulseaudio.enable = true;
-
-  programs.zsh.enable = true;
+  virtualisation.docker.enable = true;
 
   users = {
     users.elias = {
       isNormalUser = true;
-      extraGroups = [ "wheel" "networkmanager" ];
+      extraGroups = [ "wheel" "networkmanager" "video" "docker" ];
     };
     defaultUserShell = pkgs.zsh;
   };
-  
-  # This value determines the NixOS release with which your system is to be
-  # compatible, in order to avoid breaking some software such as database
-  # servers. You should change this only after NixOS release notes say you
-  # should.
-  system.stateVersion = "19.03";
 }
