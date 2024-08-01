@@ -17,6 +17,8 @@
   boot = {
     kernelPackages = pkgs.linuxKernel.packages.linux_5_15;
 
+    blacklistedKernelModules = [ "bluetooth" "btusb" ];
+
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
@@ -28,6 +30,10 @@
     xserver = {
       enable = true;
 
+      displayManager.startx.enable = true;
+
+      windowManager.i3.enable = true;
+
       # Xfce manages themes, default applications, mounting media, etc. When
       # first configuring a new system you'll want to run `xfce4-settings-manager`
       # to make stateful changes such as setting the window and icon styles.
@@ -37,23 +43,6 @@
           enable = true;
           noDesktop = true;
           enableXfwm = false;
-        };
-      };
-
-      windowManager.i3.enable = true;
-
-      displayManager.lightdm = {
-        enable = true;
-
-        greeters.gtk = {
-          enable = true;
-          theme.name = "Adapta";
-          iconTheme.name = "Arc";
-          cursorTheme.name = "Default";
-          indicators = [ "~session" "~spacer" "~power" ];
-          extraConfig = ''
-            background = #2E84EC
-          '';
         };
       };
     };
@@ -157,6 +146,9 @@
     ntfs3g
     pandoc
     pavucontrol
+    pipewire
+    playerctl
+    pulseaudio
     ripgrep
     scrot
     silver-searcher
@@ -172,6 +164,8 @@
     xcape
     xclip
     xdotool
+    xfce.xfce4-volumed-pulse
+    xorg.xinit
     xorg.xmodmap
     zoom-us
     zsh
@@ -181,7 +175,7 @@
 
   time.timeZone = "America/New_York";
 
-  virtualisation.docker.enable = true;
+  hardware.bluetooth.enable = false;
 
   users = {
     users.elias = {
