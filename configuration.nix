@@ -53,7 +53,7 @@
 
     connman.enable = true;
 
-    printing.enable = false;
+    printing.enable = true;
 
     avahi = {
       enable = true;
@@ -132,7 +132,6 @@
     figlet
     file
     firefox
-    #fzf
     git
     gnome.file-roller
     gnupg
@@ -142,7 +141,6 @@
     lighttpd
     links2
     mplayer
-    # neovim
     ntfs3g
     pandoc
     pavucontrol
